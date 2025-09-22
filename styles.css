@@ -27,12 +27,12 @@ body{
 main{
     flex: 3;
     padding: 20px;
-    background: white;
+    background: green;
 }
 aside{
     flex: 1;
     padding: 20px;
-    background:rgb(112, 177, 202);
+    background:rgb(221, 191, 17);
 }
 
 #restart{
@@ -41,14 +41,54 @@ aside{
     height: 2em;
 }
 
+.toprow{
+    display:flex;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+.deck {
+    display: flex;
+    width: 75px;
+    min-height: 125px;
+    padding: 5px;
+    border: solid white;
+    border-radius: 10px;
+    margin-right: 10px;
+}
+.Waste {
+    display: flex;
+    width: 75px;
+    min-height: 125px;
+    padding: 5px;
+    border: solid white;
+    border-radius: 10px;
+}
+
+.foundations{
+    margin-left: 95px;
+    display:flex;
+    gap: 10px;
+}
+.foundat{
+    width: 75px;
+    min-height: 125px;
+    border-radius: 5px;
+    padding:5px;
+    border: solid white;
+    border-radius: 10px;
+    margin-right: 5px;
+}
+
+
 .tableau{
     display:flex;
     gap: 10px;
 }
 .column{
     width: 75px;
-    min-height: 175px;
-    background-color: green;
+    min-height: 125px;
     border-radius: 5px;
     padding:5px;
+    border: solid white;
+    border-radius: 10px;
 }
