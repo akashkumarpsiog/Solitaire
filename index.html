@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Solitaire</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>Solitaire</h1> 
+    </header>
+
+    <div class="content">
+        <aside>
+            <p><strong>Your Score:</strong></p> 
+            <div id="score">0</div>
+            <p><strong>Do you you want to restart?</strong></p>
+            <button id="restart"> Yes </button>
+        </aside>
+
+        <main>
+            <!-- Stock/deck -->
+            <div id="deck" class="deck"></div>
+
+            <!-- foundations -->
+            <div id="foundations" class="foundations">
+                <div id="f1" class="foundat"></div> 
+                <div id="f2" class="foundat"></div>
+                <div id="f3" class="foundat"></div>
+                <div id="f4" class="foundat"></div>
+            </div>
+
+            <!-- Tableau -->
+            <div id="tableau" class="tableau">
+                <div class="column" id="col0"></div>
+                <div class="column" id="col1"></div>
+                <div class="column" id="col2"></div>
+                <div class="column" id="col3"></div>
+                <div class="column" id="col4"></div>
+                <div class="column" id="col5"></div>
+                <div class="column" id="col6"></div>
+            </div>
+        </main>
+    </div>
+    <footer>
+        Akash's Solitaire Game 
+    </footer>
+<script src= "script.js"></script>
+</body>
+</html> 

@@ -1,0 +1,54 @@
+header{
+    background-color: rgb(0, 0, 0);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 80px;
+    color: white;
+}
+footer{
+    background-color: rgb(0, 0, 0);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 50px;
+    color: white;
+}
+
+body{
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    min-height: 100vh;
+}
+.content{
+    display: flex;
+    flex-direction: row-reverse;
+}
+main{
+    flex: 3;
+    padding: 20px;
+    background: white;
+}
+aside{
+    flex: 1;
+    padding: 20px;
+    background:rgb(112, 177, 202);
+}
+
+#restart{
+    background-color: white;
+    width: 5em;
+    height: 2em;
+}
+
+.tableau{
+    display:flex;
+    gap: 10px;
+}
+.column{
+    width: 75px;
+    min-height: 175px;
+    background-color: green;
+    border-radius: 5px;
+    padding:5px;
+}
