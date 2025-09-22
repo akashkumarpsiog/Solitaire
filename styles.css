@@ -79,7 +79,6 @@ aside{
     margin-right: 5px;
 }
 
-
 .tableau{
     display:flex;
     gap: 10px;
@@ -91,4 +90,48 @@ aside{
     padding:5px;
     border: solid white;
     border-radius: 10px;
+}
+
+.card {
+  width: 75px;
+  height: 125px;
+  border-radius: 10px;
+  border: 2px solid white;
+  box-shadow: 2px 2px 6px rgba(0,0,0,0.5);
+  position: relative;
+  perspective: 600px;
+  cursor: pointer;
+}
+
+.card .front, .card .back {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  border-radius: 10px;
+  backface-visibility: hidden;
+}
+
+.card .back {
+  background: blue;
+  border: 2px solid white;
+  border-radius: 10px;
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+}
+
+.card.face-down .front { display: none; }
+.card.face-down .back { display: flex; justify-content: center; align-items: center; }
+
+.card .corner {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.card .top-left { top: 5px; left: 5px; }
+.card .bottom-right { bottom: 5px; right: 5px; }
+
+.card .center {
+  font-size: 28px;
+  opacity: 0.3; 
 }
