@@ -49,7 +49,12 @@ class Game{
 
         this.deck= [];
         this.moves = 0;
-        //this.score = 0;
+        this.selectedCards = null;
+        this.selectedCardPile = null;
+        this.dragging = false;
+        this.dragOffsetX = 0;
+        this.dragOffsetY = 0;
+        this.dragElement = null;
 
         for(let i = 0; i<7; i++){
             const e = document.getElementById(`col${i}`);
@@ -109,36 +114,6 @@ class Game{
         this.start();
     }
 
-    moveCard(card, fromPile, toPile) {
-        if (!toPile.canAdd(card)) return false;
-
-        const index = fromPile.cards.indexOf(card);
-        if (index === -1 || !fromPile.cards[index].faceUp) return false;
-
-        const movingCards = fromPile.cards.splice(index); 
-
-        movingCards.forEach(c => toPile.addCard(c));
-
-        const last = fromPile.topCard();
-        if (fromPile instanceof Tableau && last && !last.faceUp) {
-            last.showCard();
-        }
-
-        this.moves++;
-        //this.updateScore(fromPile, toPile);
-
-        fromPile.render();
-        toPile.render();
-
-        this.checkWin();
-        return true;
-    }
-/*
-    updateScore(fromPile, toPile) {
-        if (toPile instanceof Foundation) this.score += 10;
-        else if (fromPile instanceof Foundation) this.score -= 15;
-    }
-*/
     checkWin() {
         if (this.Foundations.every(f => f.cards.length === 13)){
             alert("You win!");
@@ -147,21 +122,138 @@ class Game{
         return false;
     }
 
-    pickCard(card, pile) {
-        if (!card.faceUp) return false;
+    startDrag(e, card, pile) {
+        if (!card.faceUp) return;
         const index = pile.cards.indexOf(card);
-        this.selectedCards = pile.cards.slice(index);
+        if (index === -1) return;
+
+        if ((pile instanceof Foundation || pile instanceof Waste) && card !== pile.topCard()) return;
+
+        if (pile instanceof Foundation || pile instanceof Waste) {
+            this.selectedCards = [card];
+        } else {
+            this.selectedCards = pile.cards.slice(index);
+        }
+
         this.selectedCardPile = pile;
-        this.selectedCards.forEach(c=> c.element.classList.add("selected"));
+
+        this.dragElement = document.createElement("div");
+        this.dragElement.style.position = "absolute";
+        this.dragElement.style.zIndex = 1000;
+        
+        this.selectedCards.forEach((c, i) => {
+            const clone = c.element.cloneNode(true);
+            clone.style.position = "absolute";
+            clone.style.left = "0";
+            if (pile instanceof Foundation){
+                clone.style.top = `${i * 5}px`;
+            }
+            else{
+                clone.style.top = `${i * 25}px`;
+            }
+            this.dragElement.appendChild(clone);
+        });
+
+        document.body.appendChild(this.dragElement);
+
+        const rect = card.element.getBoundingClientRect();
+        this.dragOffsetX = e.clientX - rect.left;
+        this.dragOffsetY = e.clientY - rect.top;
+        this.updateDragPosition(e);
+
+        this.dragging = true;
+
+        this.selectedCards.forEach(c => c.element.style.visibility = "hidden");
+
+        this.mouseMoveHandler = (ev) => this.updateDragPosition(ev);
+        this.mouseUpHandler = (ev) => this.endDrag(ev);
+        document.addEventListener("mousemove", this.mouseMoveHandler);
+        document.addEventListener("mouseup", this.mouseUpHandler);
+    }
+
+    updateDragPosition(e) {
+        this.dragElement.style.left = `${e.clientX - this.dragOffsetX}px`;
+        this.dragElement.style.top = `${e.clientY - this.dragOffsetY}px`;
+    }
+
+    endDrag(e) {
+        this.dragging = false;
+        document.removeEventListener("mousemove", this.mouseMoveHandler);
+        document.removeEventListener("mouseup", this.mouseUpHandler);
+
+        let targetPile = null;
+
+        this.dragElement.style.display = "none";
+        let elem = document.elementFromPoint(e.clientX, e.clientY);
+        this.dragElement.style.display = "";
+
+        while (elem && elem !== document.body) {
+            if (elem.classList.contains("column")) {
+                const idx = parseInt(elem.id.slice(3));
+                targetPile = this.Tableaus[idx];
+                break;
+            } else if (elem.classList.contains("foundation")) {
+                const idx = parseInt(elem.id.slice(1)) - 1;
+                targetPile = this.Foundations[idx];
+                break;
+            } else if (elem.id === "waste") {
+                targetPile = this.waste;
+                break;
+            }
+            elem = elem.parentNode;
+        }
+
+        let success = false;
+        if (targetPile && targetPile !== this.selectedCardPile) {
+            const firstCard = this.selectedCards[0];
+            if (targetPile.canAdd(firstCard)) {
+                success = this.dropCard(targetPile);
+            }
+        }
+
+        if (!success) {
+            this.selectedCards.forEach(c => c.element.style.visibility = "");
+        }
+
+        document.body.removeChild(this.dragElement);
+        this.dragElement = null;
+        this.selectedCards = null;
+        this.selectedCardPile = null;
     }
 
     dropCard(targetPile) {
         if (!this.selectedCards) return false;
+        if ((targetPile instanceof Foundation || targetPile instanceof Waste) && this.selectedCards.length > 1) {
+            return false;
+        }
+        const movingCards = this.selectedCards;
+        const firstCard = movingCards[0];
+        if (!targetPile.canAdd(firstCard)) return false;
+
         const fromPile = this.selectedCardPile; 
-        const success = this.moveCard(this.selectedCards[0], fromPile, targetPile);
-        if (success) this.selectedCards = null;
-        return success;
+        const index = fromPile.cards.indexOf(firstCard);
+
+        const removedCards = fromPile.cards.splice(index);
+
+        const last = fromPile.topCard();
+        if (fromPile instanceof Tableau && last && !last.faceUp) {
+            last.showCard();
+        }
+
+        removedCards.forEach(c => {
+            c.element.style.visibility = "";  
+            targetPile.addCard(c);
+        });
+
+        fromPile.render();
+        targetPile.render();
+
+        this.selectedCards = null;
+        this.moves++;
+        this.checkWin();
+        return true;
     }
+
 }
 
 class Card{
@@ -175,10 +267,9 @@ class Card{
         this.element = null;
         this.parentPile = null;
         this.render();
-        this.element.addEventListener("click", ()=>
-        {
-            if(this.faceUp){
-                game.pickCard(this, this.parentPile);
+        this.element.addEventListener("mousedown", (e) => {
+            if (this.faceUp) {
+                game.startDrag(e, this, this.parentPile);
             }
         })
     }
@@ -236,19 +327,9 @@ class Card{
 }
 
 class Pile{
-    /*
-
-    */
     constructor(element){
         this.cards=[];
         this.element= element;
-        this.element.addEventListener("click", ()=>
-        {
-            if(game.selectedCard){
-                game.dropCard(this);
-            }
-        })
-
     }
 
     addCard(card){
@@ -277,12 +358,13 @@ class Pile{
 }
 
 class Tableau extends Pile{
+
     canAdd(card){
         const top = this.topCard();
         if (!top){
             return card.rank === "K";
         }
-        return top.isRed() !== card.isRed() && card.rankValue() === top.rankValue() + 1;
+        return top.isRed() !== card.isRed() && card.rankValue() === top.rankValue() - 1;
     }
     render() {
         this.element.innerHTML= "";
@@ -296,12 +378,26 @@ class Tableau extends Pile{
 }
 
 class Foundation extends Pile{
+
     canAdd(card){
     const top = this.topCard();
     if (!top){
         return card.rank === "A";
     }
-    return top.suit === card.suit && card.rankValue() === top.rankValue() - 1;
+    return top.suit === card.suit && card.rankValue() === top.rankValue() + 1;
+    }
+    render() {
+        this.element.innerHTML = "";
+        const spacing = 5; 
+        this.cards.forEach((c, i) => {
+            c.render();
+            c.element.style.position = "absolute";
+            c.element.style.top = `${i * spacing}px`;
+            c.element.style.left = "1";
+            c.element.style.top = "5";
+            c.element.style.zIndex = i; 
+            this.element.appendChild(c.element);
+        });
     }
 }
 
@@ -313,7 +409,9 @@ class Stock extends Pile{
         this.drawCard();
         })
     }
-
+    canAdd(){
+        return false;
+    }
     drawCard() {
         if (this.cards.length === 0) {
             this.resetStock();
@@ -323,6 +421,7 @@ class Stock extends Pile{
         card.showCard();
         this.waste.addCard(card);
     }
+
     resetStock() {
         while (this.waste.cards.length) {
             const card = this.waste.removeCard();
@@ -334,20 +433,6 @@ class Stock extends Pile{
 }
 
 class Waste extends Pile{
-    constructor(element){
-        super(element);
-        this.element.addEventListener("click", ()=>{
-            if (game.selectedCards){
-                game.dropCard(this);
-            }
-            else{
-                const top = this.topCard();
-                if (top) {
-                    game.pickCard(top,this);
-                }
-            }
-        })
-    }
     canAdd(){
         return false;
     }
@@ -363,4 +448,3 @@ class Waste extends Pile{
 }
 const game = new Game();
 game.start();
-document.getElementById('restart').addEventListener('click', () => game.restart());

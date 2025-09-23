@@ -28,6 +28,7 @@ main{
     flex: 3;
     padding: 20px;
     background: green;
+    min-height: 1000px;
 }
 aside{
     flex: 1;
@@ -67,14 +68,14 @@ aside{
     display:flex;
     gap: 10px;
 }
-.foundat{
+.foundation{
     width: 75px;
     min-height: 125px;
     border-radius: 5px;
-    padding:5px;
     border: solid white;
     border-radius: 10px;
     margin-right: 5px;
+    position: relative;
 }
 
 .tableau{
@@ -92,7 +93,12 @@ aside{
     position: relative;
 }
 
+
 .card {
+  user-select: none;  
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
   width: 75px;
   height: 125px;
   border-radius: 10px;
