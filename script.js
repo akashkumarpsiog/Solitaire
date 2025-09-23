@@ -14,7 +14,7 @@ stock/waste - pile for draw and discard
 
 
 /*
-Card, Pile, tableau, Foundation, Stock, Waste, Move, Score, Rule
+Card, Pile, tableau, Foundation, Stock, waste, Move, Score, Rule
 */
 
 
@@ -27,7 +27,7 @@ Pile - add card, remove card, showTopCard, can add (is it possible?)
 tableau - move card , showTopCard, canAdd
 Foundation - addCard, canAdd
 Stock - drawCard, reset
-Waste - showTopCard, addCard
+waste - showTopCard, addCard
 Game - start, restart, moveCard, checkWin, updateScore
 */
 
@@ -49,7 +49,7 @@ class Game{
 
         this.deck= [];
         this.moves = 0;
-        this.score = 0;
+        //this.score = 0;
 
         for(let i = 0; i<7; i++){
             const e = document.getElementById(`col${i}`);
@@ -59,8 +59,8 @@ class Game{
         this.Foundations.push(new Foundation(document.getElementById('f2')));
         this.Foundations.push(new Foundation(document.getElementById('f3')));
         this.Foundations.push(new Foundation(document.getElementById('f4')));
-        this.stock = new Pile(document.getElementById('deck'));
-        this.waste = new Pile(document.getElementById('Waste'));
+        this.waste = new Waste(document.getElementById('waste'));
+        this.stock = new Stock(document.getElementById('deck'),this.waste);
     }
     createDeck() {
         const suits = ["hearts", "diamonds", "clubs", "spades"];
@@ -105,6 +105,7 @@ class Game{
     }
     
     restart(){
+        this.moves=0;
         this.start();
     }
 
@@ -112,58 +113,53 @@ class Game{
         if (!toPile.canAdd(card)) return false;
 
         const index = fromPile.cards.indexOf(card);
+        if (index === -1 || !fromPile.cards[index].faceUp) return false;
+
         const movingCards = fromPile.cards.splice(index); 
 
         movingCards.forEach(c => toPile.addCard(c));
 
+        const last = fromPile.topCard();
+        if (fromPile instanceof Tableau && last && !last.faceUp) {
+            last.showCard();
+        }
+
         this.moves++;
-        this.updateScore(fromPile, toPile);
+        //this.updateScore(fromPile, toPile);
 
         fromPile.render();
         toPile.render();
 
+        this.checkWin();
         return true;
     }
-
+/*
     updateScore(fromPile, toPile) {
         if (toPile instanceof Foundation) this.score += 10;
         else if (fromPile instanceof Foundation) this.score -= 15;
     }
-
+*/
     checkWin() {
-        return this.Foundations.every(f => f.cards.length === 13);
-    }
-
-    drawCard() {
-        if (this.stock.cards.length === 0) {
-            this.resetStock();
-            return;
+        if (this.Foundations.every(f => f.cards.length === 13)){
+            alert("You win!");
+            return true;
         }
-        const card = this.stock.removeCard();
-        card.showCard();
-        this.waste.addCard(card);
-    }
-
-    resetStock() {
-        while (this.waste.cards.length) {
-            const card = this.waste.removeCard();
-            card.hideCard();
-            this.stock.addCard(card);
-        }
-        this.stock.render();
+        return false;
     }
 
     pickCard(card, pile) {
-        this.selectedCard = card;
+        if (!card.faceUp) return false;
+        const index = pile.cards.indexOf(card);
+        this.selectedCards = pile.cards.slice(index);
         this.selectedCardPile = pile;
+        this.selectedCards.forEach(c=> c.element.classList.add("selected"));
     }
 
     dropCard(targetPile) {
-        if (!this.selectedCard) return false;
-
+        if (!this.selectedCards) return false;
         const fromPile = this.selectedCardPile; 
-        const success = this.moveCard(this.selectedCard, fromPile, targetPile);
-        if (success) this.selectedCard = null;
+        const success = this.moveCard(this.selectedCards[0], fromPile, targetPile);
+        if (success) this.selectedCards = null;
         return success;
     }
 }
@@ -191,13 +187,9 @@ class Card{
         const ranks = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
         return ranks.indexOf(this.rank) + 1;
     }
-    flipCard(){
-        this.faceUp = !this.faceUp; 
-        this.render();
-    }
     showCard(){
         this.faceUp = true; 
-        this.render();  
+        this.render();
     }
     hideCard(){
         this.faceUp = false;
@@ -207,19 +199,38 @@ class Card{
         if (!this.element){
             this.element = document.createElement("div");
             this.element.classList.add("card");
+            this.element.innerHTML = ` 
+                <div class="front">
+                    <div class = "corner top-left">
+                        <div class = "rank">${this.rank}</div>
+                        <div class= "suit"></div>
+                    </div>
+                    <div class="center">
+                        <div class="suit"></div>
+                    </div>
+                    <div class= "corner bottom-right">
+                        <div class = "rank">${this.rank}</div>
+                        <div class= "suit"></div>
+                    </div>
+                </div>
+                <div class = "back"></div>
+            `;
         }
+        const suits = {
+        hearts: "\u2665", // - heart
+        diamonds: "\u2666", // - diamond
+        clubs: "\u2663",   // - clubs
+        spades: "\u2660"  // - spades
+        };
+
+        this.element.querySelectorAll(".suit").forEach(s => s.textContent= suits[this.suit]);
+        this.element.style.color= this.isRed() ? "red" : "black";
         if (this.faceUp) {
             this.element.classList.remove('face-down');
-            this.element.textContent = `${this.rank} ${this.suit}`;
+            this.element.classList.add('face-up');
         } else {
+            this.element.classList.remove('face-up');
             this.element.classList.add('face-down');
-            this.element.textContent = '';
-        }
-        if (this.suit === "hearts" || this.suit === "diamonds"){
-            this.element.style.color = "red";
-        }
-        else{
-            this.element.style.color= "black";
         }
     }
 }
@@ -271,7 +282,16 @@ class Tableau extends Pile{
         if (!top){
             return card.rank === "K";
         }
-        return top.isRed() !== card.isRed() && top.rankValue() === card.rankValue() + 1;
+        return top.isRed() !== card.isRed() && card.rankValue() === top.rankValue() + 1;
+    }
+    render() {
+        this.element.innerHTML= "";
+        this.cards.forEach((c,i)=> {
+            c.render();
+            c.element.style.position = "absolute";
+            c.element.style.top = (i*25)+"px";
+            this.element.appendChild(c.element);
+        })
     }
 }
 
@@ -281,10 +301,66 @@ class Foundation extends Pile{
     if (!top){
         return card.rank === "A";
     }
-    return top.suit === card.suit && top.rankValue() === card.rankValue() +1;
+    return top.suit === card.suit && card.rankValue() === top.rankValue() - 1;
     }
 }
 
+class Stock extends Pile{
+    constructor(element,waste){
+        super(element);
+        this.waste = waste;
+        this.element.addEventListener("click", () =>{
+        this.drawCard();
+        })
+    }
+
+    drawCard() {
+        if (this.cards.length === 0) {
+            this.resetStock();
+            return;
+        }
+        const card = this.removeCard();
+        card.showCard();
+        this.waste.addCard(card);
+    }
+    resetStock() {
+        while (this.waste.cards.length) {
+            const card = this.waste.removeCard();
+            card.hideCard();
+            this.addCard(card);
+        }
+        this.render();
+    }
+}
+
+class Waste extends Pile{
+    constructor(element){
+        super(element);
+        this.element.addEventListener("click", ()=>{
+            if (game.selectedCards){
+                game.dropCard(this);
+            }
+            else{
+                const top = this.topCard();
+                if (top) {
+                    game.pickCard(top,this);
+                }
+            }
+        })
+    }
+    canAdd(){
+        return false;
+    }
+    render(){
+        this.element.innerHTML = "";
+        const top = this.topCard();
+        if (top){
+            top.faceUp = true;
+            top.render();
+            this.element.appendChild(top.element);
+        }
+    }
+}
 const game = new Game();
 game.start();
 document.getElementById('restart').addEventListener('click', () => game.restart());
