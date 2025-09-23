@@ -46,7 +46,7 @@ class Game{
         this.Foundations = [];
         this.stock = null;
         this.waste = null;
-
+        this.moveHistory=[];
         this.deck= [];
         this.moves = 0;
         this.selectedCards = null;
@@ -109,9 +109,58 @@ class Game{
         this.waste.render();
     }
     
-    restart(){
-        this.moves=0;
+    restart() {
+        this.moves = 0;
+        this.moveHistory = [];
+        document.getElementById("moves").textContent = this.moves;
+
+        this.Tableaus.forEach(pile => {
+            pile.cards = [];
+            pile.render();
+        });
+        this.Foundations.forEach(pile => {
+            pile.cards = [];
+            pile.render();
+        });
+        this.waste.cards = [];
+        this.waste.render();
+        this.stock.cards = [];
+        this.stock.render();
+
+        this.deck = [];
         this.start();
+    }
+
+    undo() {
+        if (this.moveHistory.length === 0) return;
+
+        const lastMove = this.moveHistory.pop();
+        const { cards, from, to } = lastMove;
+
+        to.cards.splice(to.cards.length - cards.length, cards.length);
+
+        cards.forEach(c => {
+            from.cards.push(c);
+            c.parentPile = from;
+        });
+
+        if (from instanceof Tableau) {
+            from.cards.forEach(c => c.hideCard());
+            const last = from.topCard();
+            if (last) last.showCard();
+        }
+
+        if (to instanceof Tableau) {
+            to.cards.forEach(c => c.hideCard());
+            const last = to.topCard();
+            if (last) last.showCard();
+        }
+
+        from.render();
+        to.render();
+
+        this.moves = Math.max(0, this.moves - 1);
+        document.getElementById("moves").textContent = this.moves;
     }
 
     checkWin() {
@@ -245,11 +294,13 @@ class Game{
             targetPile.addCard(c);
         });
 
+        this.moveHistory.push({cards: removedCards, from: fromPile, to: targetPile});
         fromPile.render();
         targetPile.render();
 
         this.selectedCards = null;
         this.moves++;
+        document.getElementById("moves").textContent = this.moves;
         this.checkWin();
         return true;
     }
@@ -350,10 +401,16 @@ class Pile{
     }
     render() {
         this.element.innerHTML = "";
+
         this.cards.forEach(c => {
-            c.render();
-            this.element.appendChild(c.element);
-        })
+        c.render();
+
+        c.element.style.position = "";
+        c.element.style.top = "";
+        c.element.style.left = "";
+        c.element.style.zIndex = "";
+        this.element.appendChild(c.element);
+        });
     }
 }
 
@@ -367,13 +424,16 @@ class Tableau extends Pile{
         return top.isRed() !== card.isRed() && card.rankValue() === top.rankValue() - 1;
     }
     render() {
-        this.element.innerHTML= "";
-        this.cards.forEach((c,i)=> {
-            c.render();
-            c.element.style.position = "absolute";
-            c.element.style.top = (i*25)+"px";
-            this.element.appendChild(c.element);
-        })
+        this.element.innerHTML = "";
+        this.cards.forEach((c, i) => {
+        c.render();
+        
+        c.element.style.position = "absolute";
+        c.element.style.left = "0px";
+        c.element.style.top = (i * 25) + "px";
+        c.element.style.zIndex = i;
+        this.element.appendChild(c.element);
+        });
     }
 }
 
@@ -388,16 +448,16 @@ class Foundation extends Pile{
     }
     render() {
         this.element.innerHTML = "";
-        const spacing = 5; 
-        this.cards.forEach((c, i) => {
-            c.render();
-            c.element.style.position = "absolute";
-            c.element.style.top = `${i * spacing}px`;
-            c.element.style.left = "1";
-            c.element.style.top = "5";
-            c.element.style.zIndex = i; 
-            this.element.appendChild(c.element);
-        });
+        if (this.cards.length > 0) {
+        const top = this.topCard();
+        top.render();
+
+        top.element.style.position = "absolute";
+        top.element.style.left = "0px";
+        top.element.style.top = "0px";
+        top.element.style.zIndex = 0;
+        this.element.appendChild(top.element);
+        }
     }
 }
 
@@ -432,19 +492,34 @@ class Stock extends Pile{
     }
 }
 
-class Waste extends Pile{
-    canAdd(){
-        return false;
+
+class Waste extends Pile {
+    canAdd() { 
+    return false; 
     }
-    render(){
-        this.element.innerHTML = "";
-        const top = this.topCard();
-        if (top){
-            top.faceUp = true;
-            top.render();
-            this.element.appendChild(top.element);
-        }
+    render() {
+    this.element.innerHTML = "";
+    if (this.cards.length > 0) {
+      const top = this.topCard();
+      top.render();
+      top.element.style.position = "absolute";
+      top.element.style.left = "0px";
+      top.element.style.top = "0px";
+      top.element.style.zIndex = 0;
+      this.element.appendChild(top.element);
     }
+  }
 }
+
+
 const game = new Game();
 game.start();
+const restartBtn=document.getElementById("restart")
+restartBtn.addEventListener("click", ()=>{
+    game.restart();
+})
+
+const undoBtn=document.getElementById("undo")
+undoBtn.addEventListener("click", ()=>{
+    game.undo();
+})

@@ -20,26 +20,23 @@ body{
     grid-template-rows: auto 1fr auto;
     min-height: 100vh;
 }
-.content{
+.content {
     display: flex;
     flex-direction: row-reverse;
+    flex-wrap: wrap; 
+    gap: 20px;       
 }
 main{
-    flex: 3;
+    flex: 3 1 600px;
     padding: 20px;
     background: green;
     min-height: 1000px;
 }
-aside{
-    flex: 1;
+aside {
+    flex: 1 0.5 200px;
     padding: 20px;
-    background:rgb(221, 191, 17);
-}
-
-#restart{
-    background-color: white;
-    width: 5em;
-    height: 2em;
+    background: rgba(30,30,30,0.85);
+    color: white;
 }
 
 .toprow{
@@ -53,7 +50,7 @@ aside{
     top: 0;
     left: 0;
 }
-.deck, .waste {
+.deck {
     display: block;
     width: 75px;
     height: 125px;
@@ -61,10 +58,22 @@ aside{
     border-radius: 10px;
     margin-right: 10px;
     position: relative;
+    background: rgba(255,255,255,0.05); 
+}
+
+.waste {
+    display: block;
+    width: 75px;
+    height: 125px;
+    border: solid white;
+    border-radius: 10px;
+    margin-right: 10px;
+    position: relative;
+    background: rgba(255,255,255,0.05); 
 }
 
 .foundations{
-    margin-left: 100px;
+    margin-left: 20px;
     display:flex;
     gap: 10px;
 }
@@ -76,13 +85,20 @@ aside{
     border-radius: 10px;
     margin-right: 5px;
     position: relative;
+    background: rgba(255,255,255,0.1); 
+    transition: background 0.2s;
 }
 
+.foundation:hover {
+    background: rgba(255,255,255,0.25); 
+}
 .tableau{
     position: relative; 
     display: flex;
-    gap: 0px;
-    justify-content: space-between;
+    gap: 10px;
+    justify-content: flex-start;
+    margin-left: 20px;
+    flex-wrap: wrap;
 }
 .column{
     width: 75px;
@@ -91,6 +107,7 @@ aside{
     border: 0.5px solid white;
     border-radius: 10px;
     position: relative;
+    flex-shrink: 0;
 }
 
 
@@ -106,6 +123,12 @@ aside{
   position: relative;
   perspective: 600px;
   cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
 }
 
 .card .front, .card .back {
@@ -147,6 +170,34 @@ aside{
   font-size: 28px;
 }
 
-.card.selected { 
-outline: 1px solid yellow; 
+button {
+    background-color: #f1c40f;
+    border-radius: 6px;
+    border: none;
+    width: 5em;
+    height: 2em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+    margin: 10px;
 }
+
+button:hover {
+    background-color: #d4ac0d;
+    transform: scale(1.05);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+#moves {
+    background: rgba(255,255,255,0.1);
+    padding: 5px;
+    border-radius: 0px;
+    text-align: center;
+    font-size: 1.2em;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: #fff;
+}
+
+
+
