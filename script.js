@@ -1,46 +1,4 @@
-// What things in game?
-
-
-/* We have a Card
-A pile - stack of cards (tableau, stock, waste, foundation)
-Tableau - a pile with special rules (descending order, alternating color)
-foundation - pile for completed suits (ascending order)
-stock/waste - pile for draw and discard
--scores, moves, rules
-*/
-
-
-// What are the nouns?
-
-
-/*
-Card, Pile, tableau, Foundation, Stock, waste, Move, Score, Rule
-*/
-
-
-//What actions?
-
-
-/*
-Card - flip, show, hide, render
-Pile - add card, remove card, showTopCard, can add (is it possible?)
-tableau - move card , showTopCard, canAdd
-Foundation - addCard, canAdd
-Stock - drawCard, reset
-waste - showTopCard, addCard
-Game - start, restart, moveCard, checkWin, updateScore
-*/
-
-/* then we have to define properties- 
-for each class what is the data that we need to store. 
-So we basically create constructors.
-*/
-
-
 class Game{
-    /*
-    createDeck, shuffle, start, restart, movecard, updatescore, checkwin, drawcard, resetstock, pickcard, dropcard
-    */
     constructor() {
         this.Tableaus = [];
         this.Foundations = [];
@@ -55,6 +13,11 @@ class Game{
         this.dragOffsetX = 0;
         this.dragOffsetY = 0;
         this.dragElement = null;
+
+        this.seconds = 0;
+        this.minutes = 0;
+        this.timerInterval = null;
+        this.timerElement = document.getElementById("timer");
 
         for(let i = 0; i<7; i++){
             const e = document.getElementById(`col${i}`);
@@ -165,7 +128,8 @@ class Game{
 
     checkWin() {
         if (this.Foundations.every(f => f.cards.length === 13)){
-            alert("You win!");
+            const winDiv=document.getElementById("win");
+            winDiv.style.display="block";
             return true;
         }
         return false;
@@ -305,12 +269,27 @@ class Game{
         return true;
     }
 
+    startTimer() {
+        if (this.timerInterval) clearInterval(this.timerInterval); 
+        this.seconds = 0;
+        this.minutes = 0;
+        this.timerElement = document.getElementById("timer");
+
+        this.timerInterval = setInterval(() => {
+            this.seconds++;
+            if (this.seconds >= 60) {
+                this.seconds = 0;
+                this.minutes++;
+            }
+            const secStr = this.seconds < 10 ? '0' + this.seconds : this.seconds;
+            const minStr = this.minutes;
+            if (this.timerElement) this.timerElement.textContent = `${minStr}:${secStr}`;
+        }, 1000);
+    }
+
 }
 
 class Card{
-    /*
-    isRed, rankValue, flipCard, showCard, hideCard, render
-    */
     constructor(suit,rank){
         this.suit = suit;
         this.rank = rank;
@@ -318,6 +297,7 @@ class Card{
         this.element = null;
         this.parentPile = null;
         this.render();
+        //when we press on a card and its face up we pass the mouse event e, the card, and pile.
         this.element.addEventListener("mousedown", (e) => {
             if (this.faceUp) {
                 game.startDrag(e, this, this.parentPile);
@@ -438,7 +418,6 @@ class Tableau extends Pile{
 }
 
 class Foundation extends Pile{
-
     canAdd(card){
     const top = this.topCard();
     if (!top){
@@ -490,6 +469,31 @@ class Stock extends Pile{
         }
         this.render();
     }
+    
+    render() {
+        this.element.innerHTML = "";
+
+        if (this.cards.length > 0) {
+            const top = this.topCard();
+            top.render();
+            top.element.style.position = "absolute";
+            top.element.style.left = "0px";
+            top.element.style.top = "0px";
+            top.element.style.zIndex = this.cards.length;
+            this.element.appendChild(top.element);
+        } else {
+            const recycle = document.createElement("div");
+            recycle.style.width = "100%";
+            recycle.style.height = "100%";
+            recycle.style.display = "flex";
+            recycle.style.justifyContent = "center";
+            recycle.style.alignItems = "center";
+            recycle.style.fontSize = "28px";
+            recycle.style.color = "white";
+            recycle.textContent = "<->"; 
+            this.element.appendChild(recycle);
+        }
+    }
 }
 
 
@@ -511,12 +515,13 @@ class Waste extends Pile {
   }
 }
 
-
 const game = new Game();
 game.start();
+game.startTimer();
 const restartBtn=document.getElementById("restart")
 restartBtn.addEventListener("click", ()=>{
     game.restart();
+    game.startTimer();
 })
 
 const undoBtn=document.getElementById("undo")
